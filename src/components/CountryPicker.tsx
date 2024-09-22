@@ -8,18 +8,20 @@ import {
   TextInput,
 } from "react-native";
 import { CustomBottomSheet } from "./CustomBottomSheet";
-import { CountryData } from "../utils/CountryData";
+import { Country, CountryData } from "../utils/CountryData";
 
 interface CountryPickerProps {
   isOpen: boolean;
   onClose: () => void;
-  onSelectCountry: (country: ReturnType<typeof CountryData.getAll>[0]) => void;
+  onSelectCountry: (country: Country) => void;
+  countries: Country[];
 }
 
 export const CountryPicker: React.FC<CountryPickerProps> = ({
   isOpen,
   onClose,
   onSelectCountry,
+  countries,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const allCountries = CountryData.getAll();
@@ -31,7 +33,7 @@ export const CountryPicker: React.FC<CountryPickerProps> = ({
   );
 
   const renderItem = useCallback(
-    ({ item }: { item: ReturnType<typeof CountryData.getAll>[0] }) => (
+    ({ item }: { item: Country }) => (
       <TouchableOpacity
         style={styles.countryItem}
         onPress={() => onSelectCountry(item)}

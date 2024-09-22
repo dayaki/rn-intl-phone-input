@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState, useCallback, useMemo } from "react";
 import {
   View,
   Text,
@@ -7,7 +7,7 @@ import {
   StyleSheet,
 } from "react-native";
 import { CountryPicker } from "./CountryPicker";
-import { CountryData } from "../utils/CountryData";
+import { Country, CountryData } from "../utils/CountryData";
 import { formatPhoneNumber, validatePhoneNumber } from "../utils/phoneUtils";
 
 interface IntlPhoneInputProps {
@@ -15,6 +15,8 @@ interface IntlPhoneInputProps {
   containerStyle?: object;
   inputStyle?: object;
   countryPickerStyle?: object;
+  disableCountrySelection?: boolean;
+  priorityCountryCodes?: string[];
 }
 
 export const IntlPhoneInput: React.FC<IntlPhoneInputProps> = ({
@@ -22,13 +24,26 @@ export const IntlPhoneInput: React.FC<IntlPhoneInputProps> = ({
   containerStyle,
   inputStyle,
   countryPickerStyle,
+  disableCountrySelection = false,
+  priorityCountryCodes = [],
 }) => {
-  const [selectedCountry, setSelectedCountry] = useState(
+  const [selectedCountry, setSelectedCountry] = useState<Country>(
     CountryData.getAll()[0]
   );
   const [phoneNumber, setPhoneNumber] = useState("");
   const [isValid, setIsValid] = useState(false);
   const [isBottomSheetOpen, setIsBottomSheetOpen] = useState(false);
+
+  const sortedCountries = useMemo(() => {
+    const allCountries = CountryData.getAll();
+    const priorityCountries = allCountries.filter((country) =>
+      priorityCountryCodes.includes(country.code)
+    );
+    const otherCountries = allCountries.filter(
+      (country) => !priorityCountryCodes.includes(country.code)
+    );
+    return [...priorityCountries, ...otherCountries];
+  }, [priorityCountryCodes]);
 
   const handlePhoneNumberChange = (text: string) => {
     let numericValue = text.replace(/\D/g, "");
@@ -52,7 +67,7 @@ export const IntlPhoneInput: React.FC<IntlPhoneInputProps> = ({
   };
 
   const handleCountryChange = useCallback(
-    (country: typeof selectedCountry) => {
+    (country: Country) => {
       setSelectedCountry(country);
       setIsBottomSheetOpen(false);
       const numericValue = phoneNumber.replace(/\D/g, "");
@@ -67,7 +82,8 @@ export const IntlPhoneInput: React.FC<IntlPhoneInputProps> = ({
       <View style={styles.inputContainer}>
         <TouchableOpacity
           style={[styles.countrySelector, countryPickerStyle]}
-          onPress={() => setIsBottomSheetOpen(true)}
+          onPress={() => !disableCountrySelection && setIsBottomSheetOpen(true)}
+          disabled={disableCountrySelection}
         >
           <Text style={styles.countryCode}>{selectedCountry.code}</Text>
           <Text style={styles.dialCode}>{selectedCountry.dialCode}</Text>
@@ -85,6 +101,7 @@ export const IntlPhoneInput: React.FC<IntlPhoneInputProps> = ({
         isOpen={isBottomSheetOpen}
         onClose={() => setIsBottomSheetOpen(false)}
         onSelectCountry={handleCountryChange}
+        countries={sortedCountries}
       />
     </View>
   );
